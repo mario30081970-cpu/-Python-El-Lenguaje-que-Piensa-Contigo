@@ -1,0 +1,1024 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0b1220">
+<title>Python: El Lenguaje que Piensa Contigo</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          ink: '#0b1220', panel: '#131c2e', panel2: '#1b2740',
+          line: '#25334f', pyblue: '#4B8BBE', pyyellow: '#FFD43B'
+        }
+      }
+    }
+  }
+</script>
+<style>
+  :root{
+    --bg:#0b1220; --panel:#131c2e; --panel2:#1b2740; --line:#25334f;
+    --txt:#e6edf7; --muted:#93a4c0; --blue:#4B8BBE; --yellow:#FFD43B;
+  }
+  *{ -webkit-tap-highlight-color: transparent; box-sizing:border-box; }
+  html{ scroll-behavior:smooth; -webkit-text-size-adjust:100%; }
+  body{
+    margin:0; background:var(--bg); color:var(--txt);
+    font-family: system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',sans-serif;
+    overscroll-behavior-y:contain;
+  }
+  .mono, .codebox pre, .tbadge { font-family: ui-monospace,SFMono-Regular,Menlo,Consolas,'Courier New',monospace; }
+
+  /* ---------- Componentes ---------- */
+  .card{
+    background:var(--panel); border:1px solid var(--line); border-radius:1rem;
+    padding:1rem; margin-bottom:.875rem; box-shadow:0 6px 18px rgba(0,0,0,.25);
+  }
+  .chip{
+    display:inline-block; font-size:10px; font-weight:800; letter-spacing:.09em;
+    text-transform:uppercase; color:#0b1220; background:var(--yellow);
+    padding:3px 9px; border-radius:999px;
+  }
+  .codebox{
+    background:#0d1526; border:1px solid var(--line); border-radius:.75rem;
+    padding:.7rem .8rem; overflow-x:auto; -webkit-overflow-scrolling:touch;
+  }
+  .codebox pre{
+    margin:0; font-size:12.2px; line-height:1.65; white-space:pre; color:#c8d5ea;
+  }
+  .tk-k{ color:#FFD43B; font-weight:600; }
+  .tk-s{ color:#7ee787; }
+  .tk-n{ color:#ff9e64; }
+
+  .seg{
+    padding:.6rem .4rem; border-radius:.6rem; font-size:12px; font-weight:700;
+    color:var(--muted); transition:all .18s ease; border:1px solid transparent;
+  }
+  .seg.active{ background:var(--blue); color:#06111f; }
+
+  .tbadge{
+    display:inline-block; font-size:10px; font-weight:800; padding:3px 9px;
+    border-radius:999px; border:1px solid var(--line); color:var(--muted);
+    min-width:44px; text-align:center;
+  }
+  .t-str{ background:rgba(126,231,135,.14); color:#7ee787; border-color:rgba(126,231,135,.45); }
+  .t-int{ background:rgba(255,158,100,.14); color:#ff9e64; border-color:rgba(255,158,100,.45); }
+  .t-float{ background:rgba(210,168,255,.14); color:#d2a8ff; border-color:rgba(210,168,255,.45); }
+  .t-bool{ background:rgba(121,192,255,.14); color:#79c0ff; border-color:rgba(121,192,255,.45); }
+  .pulse{ animation:pop .45s ease; }
+  @keyframes pop{ 0%{transform:scale(.75);opacity:.4} 60%{transform:scale(1.12)} 100%{transform:scale(1)} }
+
+  .opt{
+    display:block; width:100%; text-align:left; padding:.72rem .8rem;
+    border-radius:.75rem; border:1px solid var(--line); background:#0f172a;
+    font-size:13px; line-height:1.35; color:#c8d5ea; transition:all .15s;
+  }
+  .opt:active{ background:#1b2740; }
+  .opt.correct{ border-color:#2ea043; background:rgba(46,160,67,.16); color:#7ee787; font-weight:600; }
+  .opt.wrong{ border-color:#f85149; background:rgba(248,81,73,.13); color:#ff9e9e; animation:shake .35s; }
+  @keyframes shake{ 0%,100%{transform:translateX(0)} 25%{transform:translateX(-5px)} 75%{transform:translateX(5px)} }
+
+  .chipitem{
+    padding:.55rem .8rem; border-radius:.7rem; font-size:12.5px; font-weight:600;
+    border:1px solid var(--line); background:#0f172a; color:#c8d5ea; transition:all .15s;
+  }
+  .chipitem.selected{ border-color:var(--yellow); background:rgba(255,212,59,.15); color:var(--yellow); transform:scale(1.04); }
+  .chipitem.placed{ border-color:transparent; font-size:11.5px; padding:.4rem .6rem; cursor:default; }
+  .chipitem.placed.ml{ background:rgba(255,158,100,.16); color:#ff9e64; }
+  .chipitem.placed.ds{ background:rgba(121,192,255,.16); color:#79c0ff; }
+  .chipitem.placed.cv{ background:rgba(126,231,135,.16); color:#7ee787; }
+
+  .slot{ transition:all .18s; }
+  .slot.flash-ok{ border-color:#2ea043 !important; background:rgba(46,160,67,.08); }
+  .slot.flash-bad{ border-color:#f85149 !important; animation:shake .35s; }
+
+  .inp{
+    width:100%; background:#0f172a; border:1px solid var(--line); border-radius:.75rem;
+    padding:.8rem .9rem; font-size:14px; color:var(--txt); outline:none; transition:.15s;
+  }
+  .inp::placeholder{ color:#5d6f8f; }
+  .inp:focus{ border-color:var(--blue); box-shadow:0 0 0 3px rgba(75,139,190,.22); }
+  .inp.err{ border-color:#f85149; box-shadow:0 0 0 3px rgba(248,81,73,.18); }
+
+  .btn{
+    width:100%; padding:1rem; border-radius:1rem; font-weight:800; font-size:15px;
+    transition:transform .12s, filter .15s;
+  }
+  .btn:active{ transform:scale(.975); }
+  .btn-primary{ background:linear-gradient(135deg,#4B8BBE,#306998); color:#fff; box-shadow:0 8px 22px rgba(48,105,152,.4); }
+
+  .navbtn{
+    display:flex; flex-direction:column; align-items:center; gap:2px;
+    padding:.5rem .2rem .6rem; font-size:10px; font-weight:700; color:#6b7d9c;
+    position:relative; transition:color .18s;
+  }
+  .navbtn .ico{ font-size:19px; line-height:1; }
+  .navbtn.active{ color:var(--yellow); }
+  .navbtn .dot{
+    position:absolute; top:5px; left:calc(50% + 8px); width:7px; height:7px;
+    border-radius:50%; background:#7ee787; opacity:0; transition:opacity .2s;
+  }
+  .navbtn.done .dot{ opacity:1; }
+
+  .fade-in{ animation:fade .35s ease both; }
+  @keyframes fade{ from{opacity:0; transform:translateY(8px)} to{opacity:1; transform:translateY(0)} }
+
+  ::-webkit-scrollbar{ height:6px; width:6px; }
+  ::-webkit-scrollbar-thumb{ background:#2b3b5c; border-radius:999px; }
+</style>
+</head>
+<body>
+
+<!-- ============ HEADER ============ -->
+<header class="sticky top-0 z-30 border-b border-line bg-ink/95 backdrop-blur">
+  <div class="mx-auto max-w-lg px-4 py-3 flex items-center gap-3">
+    <div class="h-10 w-10 shrink-0 rounded-xl grid place-items-center text-xl"
+         style="background:linear-gradient(135deg,#4B8BBE,#306998)">🐍</div>
+    <div class="min-w-0">
+      <h1 class="text-[14.5px] font-extrabold leading-tight truncate">Python: El Lenguaje que Piensa Contigo</h1>
+      <p class="text-[11px] text-[#93a4c0] leading-tight truncate">De PSeInt a la Inteligencia Artificial</p>
+    </div>
+  </div>
+  <div class="h-1 bg-[#1b2740]"><div id="globalBar" class="h-full w-0 transition-all duration-500"
+       style="background:linear-gradient(90deg,#4B8BBE,#FFD43B)"></div></div>
+</header>
+
+<!-- ============ MAIN ============ -->
+<main class="mx-auto max-w-lg px-4 pt-4 pb-32">
+
+  <!-- ================= SECCIÓN 1 ================= -->
+  <section id="view-1" class="view">
+    <div class="card fade-in">
+      <span class="chip">Sección 1</span>
+      <h2 class="mt-2 text-xl font-extrabold">El Juicio de la Legibilidad</h2>
+      <p class="mt-2 text-[13px] text-[#93a4c0] leading-relaxed">
+        <b class="text-[#FFD43B]">«El código se lee más veces de las que se escribe.»</b>
+        Guido van Rossum priorizó la <b class="text-[#e6edf7]">claridad</b> sobre la velocidad de escritura.
+        Su sintaxis limpia recuerda al inglés cotidiano, haciendo que las palabras clave se comprendan sin experiencia previa.
+      </p>
+      <div class="mt-3 rounded-xl border border-line bg-[#0f172a] p-3 mono text-[12.5px] leading-relaxed text-[#7ee787]">
+        If the user is in the database, print a welcome message.
+      </div>
+      <div class="mt-2 text-center text-[11px] text-[#6b7d9c]">▼ se traduce casi palabra por palabra ▼</div>
+      <div class="mt-2 rounded-xl border border-line bg-[#0f172a] p-3 mono text-[12.5px] leading-relaxed">
+        <span class="tk-k">if</span> user <span class="tk-k">in</span> database:<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;<span class="tk-k">print</span>(<span class="tk-s">'Welcome'</span>)
+      </div>
+      <p class="mt-3 text-[11px] italic text-[#6b7d9c] border-l-2 border-[#FFD43B] pl-3">
+        Nota del Profesor: El Zen de Python dicta que «La legibilidad cuenta».
+      </p>
+    </div>
+
+    <!-- Comparador -->
+    <div class="card">
+      <h3 class="font-bold text-[15px]">⚖️ Antes y Después · PEP 8</h3>
+      <p class="text-[12px] text-[#93a4c0] mt-1">
+        Escribir en Python no es solo dar instrucciones a una máquina: es comunicarse con otros humanos.
+        Toca para comparar el mismo programa.
+      </p>
+      <div class="mt-3 grid grid-cols-2 gap-1.5 p-1 rounded-xl bg-[#0f172a] border border-line">
+        <button class="seg active" data-mode="bad">❌ Incorrecto</button>
+        <button class="seg" data-mode="good">✅ Correcto · PEP 8</button>
+      </div>
+      <div id="codeBox" class="mt-3"></div>
+      <ul id="codeNotes" class="mt-3 space-y-1.5 text-[12px] text-[#93a4c0]"></ul>
+    </div>
+
+    <!-- Retos -->
+    <div class="card">
+      <h3 class="font-bold text-[15px] mb-3">🧠 Mini Reto: Filosofía Python</h3>
+
+      <div class="quiz" data-q="q1" data-correct="1" data-explain="Guido priorizó la claridad y la legibilidad por encima de la velocidad de escritura.">
+        <p class="text-[13px] font-semibold mb-2">1. Según la filosofía de Guido van Rossum, al diseñar Python se priorizó…</p>
+        <div class="space-y-2">
+          <button class="opt" data-i="0">a) Que el código se escriba lo más rápido posible.</button>
+          <button class="opt" data-i="1">b) La legibilidad y la claridad del código.</button>
+          <button class="opt" data-i="2">c) El máximo rendimiento bruto de ejecución.</button>
+          <button class="opt" data-i="3">d) Usar la menor cantidad de líneas posible.</button>
+        </div>
+        <div class="fb hidden mt-2 text-[12px]"></div>
+      </div>
+
+      <hr class="my-4 border-line">
+
+      <div class="quiz" data-q="q2" data-correct="1" data-explain="PEP 8 es la guía de estilo oficial de Python: define convenciones uniformes para todo el mundo.">
+        <p class="text-[13px] font-semibold mb-2">2. ¿Qué es PEP 8?</p>
+        <div class="space-y-2">
+          <button class="opt" data-i="0">a) Un framework de Inteligencia Artificial.</button>
+          <button class="opt" data-i="1">b) La guía de estilo oficial de Python.</button>
+          <button class="opt" data-i="2">c) Un tipo de dato dinámico.</button>
+          <button class="opt" data-i="3">d) Un editor de código para Android.</button>
+        </div>
+        <div class="fb hidden mt-2 text-[12px]"></div>
+      </div>
+
+      <div id="s1ok" class="hidden mt-4 rounded-xl border border-[#2ea043]/50 bg-[#2ea043]/10 p-3 text-[12.5px] text-[#7ee787] font-semibold">
+        ✅ Sección 1 completada. ¡La legibilidad es tu primera herramienta profesional!
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= SECCIÓN 2 ================= -->
+  <section id="view-2" class="view hidden">
+    <div class="card fade-in">
+      <span class="chip">Sección 2</span>
+      <h2 class="mt-2 text-xl font-extrabold">Laboratorio de Tipado Dinámico</h2>
+      <p class="mt-2 text-[13px] text-[#93a4c0] leading-relaxed">
+        Python gestiona los tipos de datos de forma automática e invisible: es más rápido y menos propenso a errores.
+        <b class="text-[#FFD43B]">¡Python piensa por ti!</b>
+      </p>
+    </div>
+
+    <!-- Simulador -->
+    <div class="card">
+      <h3 class="font-bold text-[15px]">🔮 Asignación invisible</h3>
+      <p class="text-[12px] text-[#93a4c0] mt-1">
+        Escribe el valor de cada variable. Python analizará el contenido y asignará el tipo por sí solo.
+      </p>
+      <div id="varsList" class="mt-3 space-y-2.5"></div>
+    </div>
+
+    <!-- Consola -->
+    <div class="card">
+      <h3 class="font-bold text-[15px] mb-2">🖥️ Consola de Python</h3>
+      <div id="console" class="codebox mono text-[12px] leading-relaxed text-[#c8d5ea]">
+        <span class="text-[#6b7d9c]"># Escribe un valor arriba para ver el resultado…</span>
+      </div>
+    </div>
+
+    <!-- Comparativa -->
+    <div class="card">
+      <h3 class="font-bold text-[15px] mb-3">⚖️ Ayer vs. Hoy</h3>
+      <p class="text-[11px] font-bold uppercase tracking-wider text-[#ff9e64] mb-1.5">Ayer · PSeInt (tipado estático)</p>
+      <div class="codebox text-[12px]"><pre>Definir nombre Como Cadena;
+Definir edad Como Entero;
+Definir altura Como Real;
+Definir es_estudiante Como Logico;
+
+nombre &lt;- "Ana";
+edad &lt;- 17;</pre></div>
+      <p class="text-[11px] text-[#93a4c0] mt-2 mb-3">
+        ⚙️ Debes <b>declarar el tipo manualmente</b> y pensar en cómo funciona la máquina.
+      </p>
+
+      <p class="text-[11px] font-bold uppercase tracking-wider text-[#7ee787] mb-1.5">Hoy · Python (tipado dinámico)</p>
+      <div class="codebox text-[12px]"><pre>nombre = "Ana"
+edad = 17
+altura = 1.65
+es_estudiante = True
+
+<span class="tk-k">print</span>(<span class="tk-k">type</span>(nombre))   <span class="text-[#6b7d9c]"># &lt;class 'str'&gt;</span></pre></div>
+      <p class="text-[11px] text-[#93a4c0] mt-2">
+        💡 <b>Asignas un valor y Python se encarga del resto.</b> Te concentras en resolver el problema.
+      </p>
+    </div>
+
+    <!-- Flexibilidad -->
+    <div class="card">
+      <h3 class="font-bold text-[15px]">🔀 Prueba de Flexibilidad Total</h3>
+      <p class="text-[12px] text-[#93a4c0] mt-1">
+        En lenguajes estáticos el tipo es fijo e inmutable. En Python, una variable puede <b class="text-[#FFD43B]">cambiar de tipo en plena ejecución</b> sin generar errores.
+        Toca al menos <b>2 valores distintos</b>.
+      </p>
+      <div id="flexBtns" class="mt-3 grid grid-cols-2 gap-2"></div>
+      <div id="flexOut" class="codebox mt-3 mono text-[12px] leading-relaxed text-[#c8d5ea]"></div>
+      <div id="flexMsg" class="mt-2 text-[12px] text-[#93a4c0]"></div>
+    </div>
+
+    <div id="s2ok" class="hidden rounded-xl border border-[#2ea043]/50 bg-[#2ea043]/10 p-3 text-[12.5px] text-[#7ee787] font-semibold">
+      ✅ Sección 2 completada. ¡Ya dominas la inferencia de tipos en tiempo real!
+    </div>
+  </section>
+
+  <!-- ================= SECCIÓN 3 ================= -->
+  <section id="view-3" class="view hidden">
+    <div class="card fade-in">
+      <span class="chip">Sección 3</span>
+      <h2 class="mt-2 text-xl font-extrabold">Mapa del Ecosistema de Datos e IA</h2>
+      <p class="mt-2 text-[13px] text-[#93a4c0] leading-relaxed">
+        Python domina la industria porque tiene una librería para cada problema.
+        Clasifica cada librería y cada aplicación real dentro de su ecosistema.
+      </p>
+      <div class="mt-3 rounded-xl border border-line bg-[#0f172a] p-3 text-[12px] text-[#93a4c0] leading-relaxed">
+        <b class="text-[#FFD43B]">Instrucciones:</b><br>
+        1️⃣ Toca una tarjeta de la lista inferior.<br>
+        2️⃣ Toca el ecosistema al que pertenece.<br>
+        3️⃣ Si aciertas, la tarjeta se colocará en su lugar. ✅
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="font-bold text-[15px]">🎯 Ecosistemas</h3>
+        <span id="scoreTag" class="text-[11px] font-bold text-[#93a4c0]">0 / 9</span>
+      </div>
+      <div id="slots" class="space-y-3"></div>
+    </div>
+
+    <div class="card">
+      <h3 class="font-bold text-[15px] mb-2">🧩 Tarjetas por clasificar</h3>
+      <div id="pool" class="flex flex-wrap gap-2"></div>
+      <p id="poolMsg" class="mt-3 text-[12px] text-[#93a4c0]">Selecciona una tarjeta para comenzar…</p>
+    </div>
+
+    <div id="s3ok" class="hidden rounded-xl border border-[#2ea043]/50 bg-[#2ea043]/10 p-3 text-[12.5px] text-[#7ee787] font-semibold">
+      ✅ Sección 3 completada. ¡Ya conoces el mapa del ecosistema de Datos e IA!
+    </div>
+
+    <div id="cheat" class="hidden card">
+      <h3 class="font-bold text-[15px] mb-3">📚 Mapa de referencia</h3>
+      <div class="space-y-3 text-[12.5px]">
+        <div class="rounded-xl border border-[#ff9e64]/40 bg-[#ff9e64]/8 p-3">
+          <p class="font-bold text-[#ff9e64] mb-1">Machine Learning</p>
+          <p class="text-[#93a4c0]">TensorFlow · PyTorch · scikit-learn</p>
+          <p class="mt-1 text-[#c8d5ea]">→ Sistemas de recomendación (Netflix), asistentes de voz (Siri, Alexa)</p>
+        </div>
+        <div class="rounded-xl border border-[#79c0ff]/40 bg-[#79c0ff]/8 p-3">
+          <p class="font-bold text-[#79c0ff] mb-1">Data Science</p>
+          <p class="text-[#93a4c0]">Pandas · NumPy · Matplotlib</p>
+          <p class="mt-1 text-[#c8d5ea]">→ Predicciones financieras, dashboards interactivos</p>
+        </div>
+        <div class="rounded-xl border border-[#7ee787]/40 bg-[#7ee787]/8 p-3">
+          <p class="font-bold text-[#7ee787] mb-1">Computer Vision</p>
+          <p class="text-[#93a4c0]">OpenCV</p>
+          <p class="mt-1 text-[#c8d5ea]">→ Vehículos autónomos, reconocimiento facial</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= SECCIÓN 4 ================= -->
+  <section id="view-4" class="view hidden">
+    <div class="card fade-in">
+      <span class="chip">Informe</span>
+      <h2 class="mt-2 text-xl font-extrabold">Tu Camino Hacia el Futuro del Código</h2>
+      <p class="mt-2 text-[13px] text-[#93a4c0] leading-relaxed">
+        El viaje desde tu primer <span class="mono text-[#FFD43B]">print()</span> hasta el desarrollo de Inteligencia Artificial comienza hoy.
+      </p>
+    </div>
+
+    <div class="card">
+      <h3 class="font-bold text-[15px] mb-3">📋 Estado de tu recorrido</h3>
+      <div id="checklist" class="space-y-2"></div>
+    </div>
+
+    <div class="card">
+      <h3 class="font-bold text-[15px] mb-3">👤 Datos del alumno</h3>
+      <div class="space-y-3">
+        <input id="fNombre" class="inp" type="text" placeholder="Nombre" autocomplete="given-name">
+        <input id="fApellido" class="inp" type="text" placeholder="Apellido" autocomplete="family-name">
+        <input id="fCurso" class="inp" type="text" placeholder="Curso (ej.: 5° 2° T.T.)">
+      </div>
+      <p id="formErr" class="hidden mt-3 text-[12px] text-[#ff9e9e] font-semibold"></p>
+    </div>
+
+    <div class="card">
+      <h3 class="font-bold text-[15px] mb-1">✍️ Síntesis para tu carpeta</h3>
+      <p class="text-[12px] text-[#93a4c0] mb-3">
+        Escribe tus conclusiones. Este texto se incluirá en el informe descargable como base para fundamentar tu carpeta física.
+      </p>
+      <textarea id="fSintesis" rows="7" class="inp leading-relaxed" style="resize:vertical"
+        placeholder="¿Qué ventaja concreta tiene la legibilidad del código cuando trabajo en equipo?&#10;¿En qué se diferencia el tipado dinámico de Python del tipado estático de PSeInt?&#10;¿Qué ecosistema de Python me gustaría explorar y por qué?"></textarea>
+    </div>
+
+    <div class="card">
+      <button id="btnInforme" class="btn btn-primary">📄 Generar y Descargar Informe (.doc)</button>
+      <p id="genMsg" class="hidden mt-3 text-[12px] font-semibold"></p>
+      <p class="mt-3 text-[11px] text-[#6b7d9c] leading-relaxed">
+        El archivo se descargará en tu carpeta de <b>Descargas</b> y podrás abrirlo con Word, Google Docs o WPS Office.
+      </p>
+    </div>
+  </section>
+
+</main>
+
+<!-- ============ NAV INFERIOR ============ -->
+<nav class="fixed bottom-0 left-0 right-0 z-40 border-t border-line bg-[#0f172a]/97 backdrop-blur"
+     style="padding-bottom:env(safe-area-inset-bottom)">
+  <div class="mx-auto max-w-lg grid grid-cols-4">
+    <button class="navbtn active" data-view="1"><span class="ico">📏</span><span>Legibilidad</span><span class="dot"></span></button>
+    <button class="navbtn" data-view="2"><span class="ico">🧪</span><span>Tipado</span><span class="dot"></span></button>
+    <button class="navbtn" data-view="3"><span class="ico">🗺️</span><span>Ecosistema</span><span class="dot"></span></button>
+    <button class="navbtn" data-view="4"><span class="ico">📄</span><span>Informe</span><span class="dot"></span></button>
+  </div>
+</nav>
+
+<script>
+/* ==========================================================
+   ESTADO GLOBAL
+   ========================================================== */
+const state = {
+  s1: { q1:null, q2:null },
+  s2: { vars:{}, flexTypes:[] },
+  s3: { matched:0, total:9, placed:{} },
+  done: { s1:false, s2:false, s3:false }
+};
+
+/* ==========================================================
+   NAVEGACIÓN
+   ========================================================== */
+const navBtns = document.querySelectorAll('.navbtn');
+const views   = document.querySelectorAll('.view');
+
+function goTo(n){
+  views.forEach(v => v.classList.add('hidden'));
+  const target = document.getElementById('view-' + n);
+  if(target){ target.classList.remove('hidden'); target.classList.add('fade-in'); }
+  navBtns.forEach(b => b.classList.toggle('active', b.dataset.view === String(n)));
+  if(n === '4') renderChecklist();
+  window.scrollTo({ top:0, behavior:'smooth' });
+}
+navBtns.forEach(b => b.addEventListener('click', () => goTo(b.dataset.view)));
+
+/* ==========================================================
+   RESALTADO DE SINTAXIS
+   ========================================================== */
+function escHTML(s){
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function highlight(code){
+  let s = escHTML(code);
+  s = s.replace(/("""[\s\S]*?"""|"[^"\n]*"|'[^'\n]*')/g, '<span class="tk-s">$1</span>');
+  s = s.replace(/\b(def|for|in|if|else|return|print|and|or|not|True|False|None|type)\b/g, '<span class="tk-k">$1</span>');
+  s = s.replace(/\b(\d+(?:\.\d+)?)\b/g, '<span class="tk-n">$1</span>');
+  return s;
+}
+
+/* ==========================================================
+   SECCIÓN 1 — COMPARADOR PEP 8
+   ========================================================== */
+const CODE_BAD = `def calculate_average(numbers):
+  total=0
+  for n in numbers:total+=n
+  return total/len(numbers)if numbers else 0
+data=[10,20,30,40,50];result=calculate_average(data)
+print("Average:",result)`;
+
+const CODE_GOOD = `def calculate_average(numbers):
+    """Calcula el promedio de una lista de números."""
+    total = 0
+    for n in numbers:
+        total += n
+    return total / len(numbers) if numbers else 0
+
+data = [10, 20, 30, 40, 50]
+result = calculate_average(data)
+print("Average:", result)`;
+
+const NOTES_BAD = [
+  '❌ Indentación de 2 espacios (PEP 8 exige 4).',
+  '❌ Varias sentencias en una misma línea separadas por “;”.',
+  '❌ Sin espacios alrededor de los operadores: <span class="mono">total=0</span>, <span class="mono">total+=n</span>.',
+  '❌ Sin docstring ni comentarios que expliquen la función.',
+  '❌ Nombres poco descriptivos (<span class="mono">n</span>, <span class="mono">data</span>) y todo pegado.'
+];
+const NOTES_GOOD = [
+  '✅ Indentación uniforme de 4 espacios.',
+  '✅ Una sentencia por línea: el código respira.',
+  '✅ Espacios alrededor de operadores: <span class="mono">total += n</span>.',
+  '✅ Docstring que documenta qué hace la función.',
+  '✅ Líneas en blanco que separan bloques lógicos.'
+];
+
+const codeBox = document.getElementById('codeBox');
+const codeNotes = document.getElementById('codeNotes');
+
+function renderCode(mode){
+  const code = mode === 'bad' ? CODE_BAD : CODE_GOOD;
+  const notes = mode === 'bad' ? NOTES_BAD : NOTES_GOOD;
+  codeBox.innerHTML = '<div class="codebox"><pre>' + highlight(code) + '</pre></div>';
+  codeNotes.innerHTML = notes.map(n => '<li class="flex gap-2 leading-snug">' + n + '</li>').join('');
+}
+renderCode('bad');
+
+document.querySelectorAll('.seg').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.seg').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderCode(btn.dataset.mode);
+  });
+});
+
+/* ---- Quizzes ---- */
+document.querySelectorAll('.quiz').forEach(q => {
+  const correct = parseInt(q.dataset.correct, 10);
+  q.querySelectorAll('.opt').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if(q.dataset.done === '1') return;
+      const i  = parseInt(btn.dataset.i, 10);
+      const fb = q.querySelector('.fb');
+
+      if(i === correct){
+        btn.classList.add('correct');
+        q.dataset.done = '1';
+        q.querySelectorAll('.opt').forEach(b => b.disabled = true);
+        fb.className = 'fb mt-2 text-[12px] text-[#7ee787] font-semibold';
+        fb.textContent = '✅ ¡Correcto! ' + (q.dataset.explain || '');
+        state.s1[q.dataset.q] = { correct:true, answer: btn.textContent.trim() };
+        checkS1();
+      } else {
+        btn.classList.add('wrong');
+        fb.className = 'fb mt-2 text-[12px] text-[#ff9e9e] font-semibold';
+        fb.textContent = '❌ No es la opción correcta. Vuelve a intentarlo.';
+        setTimeout(() => btn.classList.remove('wrong'), 700);
+      }
+    });
+  });
+});
+
+function checkS1(){
+  if(state.s1.q1 && state.s1.q1.correct && state.s1.q2 && state.s1.q2.correct){
+    setDone('s1');
+    document.getElementById('s1ok').classList.remove('hidden');
+  }
+}
+
+/* ==========================================================
+   SECCIÓN 2 — TIPADO DINÁMICO
+   ========================================================== */
+const VARS = [
+  { id:'nombre',        def:'"Ana"' },
+  { id:'edad',          def:'17' },
+  { id:'altura',        def:'1.65' },
+  { id:'es_estudiante', def:'True' }
+];
+
+function detectType(raw){
+  const v = raw.trim();
+  if(v === '') return { type:null };
+  if(/^(True|False)$/.test(v)) return { type:'bool', display:v, msg:'Detecta Booleano (bool)' };
+  if(/^[+-]?\d+$/.test(v))     return { type:'int',  display:v, msg:'Detecta Entero (int)' };
+  if(/^[+-]?(\d+\.\d*|\.\d+)$/.test(v)) return { type:'float', display:v, msg:'Detecta Decimal (float)' };
+
+  let txt = v, quoted = false;
+  if((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'"))){
+    txt = v.slice(1, -1); quoted = true;
+  }
+  return {
+    type:'str', display:txt, quoted,
+    msg: quoted ? 'Detecta Texto (str)' : '💡 En Python los textos van entre comillas: "Ana"'
+  };
+}
+
+const varsList = document.getElementById('varsList');
+VARS.forEach(v => {
+  const row = document.createElement('div');
+  row.className = 'rounded-xl border border-line bg-[#0f172a] p-3';
+  row.innerHTML =
+    '<div class="flex items-center gap-2">' +
+      '<span class="mono text-[13px] text-[#79c0ff] shrink-0">' + v.id + '</span>' +
+      '<span class="text-[#6b7d9c] shrink-0">=</span>' +
+      '<input class="vinp mono flex-1 min-w-0 bg-transparent text-[13px] text-[#FFD43B] outline-none border-b border-line pb-0.5" ' +
+             'value=\'' + v.def + '\' data-id="' + v.id + '" spellcheck="false" autocapitalize="off" autocomplete="off">' +
+      '<span class="tbadge shrink-0" data-id="' + v.id + '">?</span>' +
+    '</div>' +
+    '<p class="vmsg mt-1.5 text-[11px] text-[#93a4c0] hidden"></p>';
+  varsList.appendChild(row);
+});
+
+function updateVar(id, raw){
+  const r = detectType(raw);
+  const badge = document.querySelector('.tbadge[data-id="' + id + '"]');
+  const msgEl = document.querySelector('.vinp[data-id="' + id + '"]').closest('div').parentElement.querySelector('.vmsg');
+
+  if(!r.type){
+    badge.textContent = '?';
+    badge.className = 'tbadge shrink-0';
+    msgEl.classList.add('hidden');
+    delete state.s2.vars[id];
+    renderConsole(); checkS2(); return;
+  }
+
+  badge.textContent = r.type;
+  badge.className = 'tbadge shrink-0 t-' + r.type + ' pulse';
+  setTimeout(() => badge.classList.remove('pulse'), 460);
+
+  if(r.msg){
+    msgEl.textContent = r.msg;
+    msgEl.classList.remove('hidden');
+  } else {
+    msgEl.classList.add('hidden');
+  }
+
+  state.s2.vars[id] = { type: r.type, display: r.display };
+  renderConsole();
+  checkS2();
+}
+
+varsList.querySelectorAll('.vinp').forEach(inp => {
+  inp.addEventListener('input', () => updateVar(inp.dataset.id, inp.value));
+  updateVar(inp.dataset.id, inp.value);
+});
+
+function renderConsole(){
+  const out = [];
+  VARS.forEach(v => {
+    const s = state.s2.vars[v.id];
+    if(!s) return;
+    const lit = s.type === 'str' ? '"' + s.display + '"' : s.display;
+    out.push('<span class="text-[#6b7d9c]">&gt;&gt;&gt;</span> ' + v.id + ' = ' + lit);
+    out.push('<span class="text-[#6b7d9c]">&gt;&gt;&gt;</span> <span class="tk-k">type</span>(' + v.id + ')');
+    out.push('&lt;class \'' + s.type + '\'&gt;');
+  });
+  document.getElementById('console').innerHTML = out.length
+    ? out.join('<br>')
+    : '<span class="text-[#6b7d9c]"># Escribe un valor arriba para ver el resultado…</span>';
+}
+
+/* ---- Flexibilidad ---- */
+const FLEX = [
+  { v:'"flexible"', t:'str',   label:'dato = "flexible"' },
+  { v:'10',         t:'int',   label:'dato = 10' },
+  { v:'3.14',       t:'float', label:'dato = 3.14' },
+  { v:'True',       t:'bool',  label:'dato = True' }
+];
+let currentFlex = null;
+
+const flexBtns = document.getElementById('flexBtns');
+FLEX.forEach((f, i) => {
+  const b = document.createElement('button');
+  b.className = 'opt mono text-[12.5px] text-center';
+  b.textContent = f.label;
+  b.dataset.i = i;
+  b.addEventListener('click', () => {
+    currentFlex = f;
+    if(!state.s2.flexTypes.includes(f.t)) state.s2.flexTypes.push(f.t);
+
+    flexBtns.querySelectorAll('.opt').forEach(x => x.classList.remove('correct'));
+    b.classList.add('correct');
+
+    const out = document.getElementById('flexOut');
+    out.innerHTML =
+      '<span class="text-[#6b7d9c]">&gt;&gt;&gt;</span> dato = ' + f.v + '<br>' +
+      '<span class="text-[#6b7d9c]">&gt;&gt;&gt;</span> <span class="tk-k">type</span>(dato)<br>' +
+      '&lt;class \'' + f.t + '\'&gt;';
+
+    const msg = document.getElementById('flexMsg');
+    msg.innerHTML = '🔀 <b class="text-[#FFD43B]">dato</b> ahora es <b>' + f.t + '</b>. ' +
+      'En PSeInt esto daría <b class="text-[#ff9e9e]">error de tipo</b>; en Python es totalmente válido. ' +
+      '<br><span class="text-[#6b7d9c]">Tipos probados: ' + state.s2.flexTypes.length + ' de 4</span>';
+
+    checkS2();
+  });
+  flexBtns.appendChild(b);
+});
+
+function checkS2(){
+  const allTyped = VARS.every(v => state.s2.vars[v.id] && state.s2.vars[v.id].type);
+  const flexible = state.s2.flexTypes.length >= 2;
+  if(allTyped && flexible){
+    setDone('s2');
+    document.getElementById('s2ok').classList.remove('hidden');
+  }
+}
+
+/* ==========================================================
+   SECCIÓN 3 — ECOSISTEMA
+   ========================================================== */
+const CATS = [
+  { id:'ml', name:'Machine Learning', color:'#ff9e64', icon:'🤖' },
+  { id:'ds', name:'Data Science',     color:'#79c0ff', icon:'📊' },
+  { id:'cv', name:'Computer Vision',  color:'#7ee787', icon:'👁️' }
+];
+const ITEMS = [
+  { id:'tensorflow',    name:'TensorFlow',            cat:'ml' },
+  { id:'pytorch',       name:'PyTorch',               cat:'ml' },
+  { id:'netflix',       name:'Recomendación (Netflix)', cat:'ml' },
+  { id:'pandas',        name:'Pandas',                cat:'ds' },
+  { id:'numpy',         name:'NumPy',                 cat:'ds' },
+  { id:'dashboards',    name:'Dashboards interactivos', cat:'ds' },
+  { id:'opencv',        name:'OpenCV',                cat:'cv' },
+  { id:'facial',        name:'Reconocimiento facial', cat:'cv' },
+  { id:'autos',         name:'Vehículos autónomos',   cat:'cv' }
+];
+
+const slotsEl = document.getElementById('slots');
+CATS.forEach(c => {
+  const d = document.createElement('div');
+  d.className = 'slot rounded-xl border-2 border-dashed border-line p-3';
+  d.dataset.cat = c.id;
+  d.innerHTML =
+    '<div class="flex items-center justify-between">' +
+      '<span class="font-extrabold text-[13px]" style="color:' + c.color + '">' + c.icon + ' ' + c.name + '</span>' +
+      '<span class="counter text-[11px] font-bold text-[#93a4c0]">0 / 3</span>' +
+    '</div>' +
+    '<div class="items mt-2 flex flex-wrap gap-1.5 min-h-[10px]"></div>';
+  slotsEl.appendChild(d);
+});
+
+const poolEl = document.getElementById('pool');
+let selectedChip = null;
+
+function shuffle(arr){
+  const a = arr.slice();
+  for(let i = a.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+shuffle(ITEMS).forEach(it => {
+  const b = document.createElement('button');
+  b.className = 'chipitem';
+  b.textContent = it.name;
+  b.dataset.id = it.id;
+  b.dataset.cat = it.cat;
+  b.addEventListener('click', () => {
+    if(b.classList.contains('placed')) return;
+    poolEl.querySelectorAll('.chipitem').forEach(x => x.classList.remove('selected'));
+    if(selectedChip === b){
+      selectedChip = null;
+      document.getElementById('poolMsg').textContent = 'Selección cancelada. Toca una tarjeta para elegir.';
+      return;
+    }
+    selectedChip = b;
+    b.classList.add('selected');
+    document.getElementById('poolMsg').innerHTML =
+      '👉 Seleccionaste <b class="text-[#FFD43B]">' + it.name + '</b>. Ahora toca el ecosistema correcto.';
+  });
+  poolEl.appendChild(b);
+});
+
+slotsEl.querySelectorAll('.slot').forEach(slot => {
+  slot.addEventListener('click', () => {
+    const msg = document.getElementById('poolMsg');
+    if(!selectedChip){
+      msg.innerHTML = '⚠️ Primero toca una tarjeta de la lista inferior.';
+      return;
+    }
+    const cat = slot.dataset.cat;
+
+    if(selectedChip.dataset.cat === cat){
+      /* Acierto */
+      const chip = selectedChip;
+      chip.classList.remove('selected');
+      chip.classList.add('placed', cat);
+      chip.style.pointerEvents = 'none';
+      slot.querySelector('.items').appendChild(chip);
+      selectedChip = null;
+
+      const n = slot.querySelectorAll('.chipitem').length;
+      slot.querySelector('.counter').textContent = n + ' / 3';
+
+      slot.classList.add('flash-ok');
+      setTimeout(() => slot.classList.remove('flash-ok'), 500);
+
+      state.s3.matched++;
+      state.s3.placed[chip.dataset.id] = cat;
+      document.getElementById('scoreTag').textContent = state.s3.matched + ' / ' + state.s3.total;
+      msg.innerHTML = '✅ ¡Correcto! <b>' + chip.textContent + '</b> pertenece a ese ecosistema.';
+
+      if(state.s3.matched === state.s3.total){
+        setDone('s3');
+        document.getElementById('s3ok').classList.remove('hidden');
+        document.getElementById('cheat').classList.remove('hidden');
+        document.getElementById('cheat').classList.add('fade-in');
+        msg.innerHTML = '🎉 ¡Completaste el mapa del ecosistema! Revisa el mapa de referencia.';
+      }
+    } else {
+      /* Error */
+      slot.classList.add('flash-bad');
+      setTimeout(() => slot.classList.remove('flash-bad'), 600);
+      msg.innerHTML = '❌ Esa tarjeta no pertenece a <b>' + cat.toUpperCase() + '</b>. Intenta con otro ecosistema.';
+    }
+  });
+});
+
+/* ==========================================================
+   PROGRESO / CHECKLIST
+   ========================================================== */
+const SECTION_LABELS = {
+  s1: 'Sección 1 · El Juicio de la Legibilidad (PEP 8)',
+  s2: 'Sección 2 · Laboratorio de Tipado Dinámico',
+  s3: 'Sección 3 · Mapa del Ecosistema de Datos e IA'
+};
+
+function setDone(key){
+  if(state.done[key]) return;
+  state.done[key] = true;
+  const btn = document.querySelector('.navbtn[data-view="' + key.replace('s','') + '"]');
+  if(btn) btn.classList.add('done');
+  updateProgress();
+}
+
+function updateProgress(){
+  const total = 3;
+  const done = Object.values(state.done).filter(Boolean).length;
+  document.getElementById('globalBar').style.width = ((done / total) * 100) + '%';
+}
+
+function renderChecklist(){
+  const cl = document.getElementById('checklist');
+  cl.innerHTML = Object.keys(SECTION_LABELS).map(k => {
+    const ok = state.done[k];
+    return '<div class="flex items-center gap-3 rounded-xl border p-3 ' +
+      (ok ? 'border-[#2ea043]/50 bg-[#2ea043]/10' : 'border-line bg-[#0f172a]') + '">' +
+      '<span class="text-lg">' + (ok ? '✅' : '⏳') + '</span>' +
+      '<span class="text-[12.5px] font-semibold ' + (ok ? 'text-[#7ee787]' : 'text-[#93a4c0]') + '">' +
+        SECTION_LABELS[k] + '</span></div>';
+  }).join('');
+}
+renderChecklist();
+
+/* ==========================================================
+   GENERACIÓN DEL INFORME .DOC
+   ========================================================== */
+function escapeDoc(s){
+  return String(s || '')
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+let warnedOnce = false;
+
+document.getElementById('btnInforme').addEventListener('click', () => {
+  const nombre   = document.getElementById('fNombre').value.trim();
+  const apellido = document.getElementById('fApellido').value.trim();
+  const curso    = document.getElementById('fCurso').value.trim();
+  const sintesis = document.getElementById('fSintesis').value.trim();
+
+  const errEl = document.getElementById('formErr');
+  const msgEl = document.getElementById('genMsg');
+  const inputs = ['fNombre','fApellido','fCurso'].map(id => document.getElementById(id));
+
+  inputs.forEach(i => i.classList.remove('err'));
+
+  /* Validación de datos */
+  if(!nombre || !apellido || !curso){
+    inputs.forEach(i => { if(!i.value.trim()) i.classList.add('err'); });
+    errEl.textContent = '⚠️ Completa Nombre, Apellido y Curso para generar el informe.';
+    errEl.classList.remove('hidden');
+    errEl.className = 'mt-3 text-[12px] text-[#ff9e9e] font-semibold';
+    return;
+  }
+  errEl.classList.add('hidden');
+
+  /* Advertencia de secciones incompletas */
+  const faltantes = Object.keys(state.done).filter(k => !state.done[k]);
+  if(faltantes.length > 0 && !warnedOnce){
+    warnedOnce = true;
+    msgEl.className = 'mt-3 text-[12px] text-[#FFD43B] font-semibold';
+    msgEl.innerHTML = '⚠️ Aún tienes ' + faltantes.length + ' sección(es) sin completar. ' +
+                      'Esas secciones aparecerán como “No completado”. ' +
+                      'Toca el botón otra vez si deseas generar el informe de todos modos.';
+    msgEl.classList.remove('hidden');
+    return;
+  }
+
+  /* ---- Construcción del documento ---- */
+  const fecha = new Date().toLocaleDateString('es-AR', { day:'2-digit', month:'long', year:'numeric' });
+  const hora  = new Date().toLocaleTimeString('es-AR', { hour:'2-digit', minute:'2-digit' });
+
+  /* Sección 1 */
+  const r1a = state.s1.q1 ? escapeDoc(state.s1.q1.answer) : 'No respondida';
+  const r1b = state.s1.q2 ? escapeDoc(state.s1.q2.answer) : 'No respondida';
+  const e1a = state.s1.q1 && state.s1.q1.correct ? 'Correcto ✅' : 'Pendiente ❌';
+  const e1b = state.s1.q2 && state.s1.q2.correct ? 'Correcto ✅' : 'Pendiente ❌';
+
+  /* Sección 2 */
+  const varRows = VARS.map(v => {
+    const s = state.s2.vars[v.id];
+    const val = s ? (s.type === 'str' ? '"' + escapeDoc(s.display) + '"' : escapeDoc(s.display)) : '—';
+    const typ = s ? s.type : '—';
+    return '<tr><td><b>' + v.id + '</b></td><td>' + val + '</td><td>' + typ + '</td></tr>';
+  }).join('');
+
+  const flexTxt = state.s2.flexTypes.length
+    ? state.s2.flexTypes.join(' → ')
+    : 'No realizó la prueba';
+
+  /* Sección 3 */
+  const catNames = { ml:'Machine Learning', ds:'Data Science', cv:'Computer Vision' };
+  const placeRows = CATS.map(c => {
+    const items = ITEMS.filter(i => state.s3.placed[i.id] === c.id).map(i => escapeDoc(i.name));
+    return '<tr><td><b>' + catNames[c.id] + '</b></td><td>' +
+           (items.length ? items.join(' · ') : '—') + '</td></tr>';
+  }).join('');
+
+  const sintesisHTML = sintesis
+    ? '<div class="box">' + escapeDoc(sintesis).replace(/\n/g, '<br>') + '</div>'
+    : '<div class="box"><i>El alumno no registró una síntesis escrita en el simulador. ' +
+      'Utilizar el espacio inferior para desarrollarla en la carpeta.</i></div>';
+
+  const docHTML =
+'<html xmlns:o="urn:schemas-microsoft-com:office:office" ' +
+      'xmlns:w="urn:schemas-microsoft-com:office:word" ' +
+      'xmlns="http://www.w3.org/TR/REC-html40">' +
+'<head><meta charset="utf-8"><title>Informe Python</title>' +
+'<!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View>' +
+'<w:Zoom>100</w:Zoom></w:WordDocument></xml><![endif]-->' +
+'<style>' +
+'@page{size:A4;margin:2cm;}' +
+'body{font-family:Calibri,Arial,sans-serif;font-size:11pt;color:#1a1a1a;line-height:1.5;}' +
+'h1{color:#306998;font-size:19pt;margin:0 0 2pt 0;}' +
+'h2{color:#306998;font-size:13pt;border-bottom:1.5pt solid #306998;padding-bottom:3pt;margin-top:20pt;}' +
+'h3{color:#444;font-size:11.5pt;margin:12pt 0 4pt 0;}' +
+'table{border-collapse:collapse;width:100%;margin:6pt 0;}' +
+'td,th{border:0.75pt solid #b9c4d4;padding:6pt;font-size:10pt;vertical-align:top;}' +
+'th{background:#eef3f9;text-align:left;font-weight:bold;}' +
+'.small{color:#666;font-size:9pt;}' +
+'.box{border:0.75pt solid #b9c4d4;padding:9pt;background:#f8fafc;min-height:40pt;}' +
+'.line{border-bottom:0.75pt dotted #999;height:20pt;}' +
+'.ok{color:#1a7f37;font-weight:bold;}' +
+'.bad{color:#c0392b;font-weight:bold;}' +
+'ul{margin:4pt 0 4pt 18pt;padding:0;} li{margin-bottom:3pt;font-size:10pt;}' +
+'</style></head><body>' +
+
+'<h1>Python: El Lenguaje que Piensa Contigo</h1>' +
+'<p class="small">Informe de participación en el simulador educativo · ' +
+'De la sintaxis básica a la Inteligencia Artificial · Transición de PSeInt a Python</p>' +
+
+'<table>' +
+'<tr><th style="width:24%">Alumno/a</th><td><b>' + escapeDoc(apellido) + ', ' + escapeDoc(nombre) + '</b></td></tr>' +
+'<tr><th>Curso</th><td>' + escapeDoc(curso) + '</td></tr>' +
+'<tr><th>Fecha de emisión</th><td>' + fecha + ' — ' + hora + ' hs</td></tr>' +
+'<tr><th>Recorrido completado</th><td>' +
+  Object.values(state.done).filter(Boolean).length + ' de 3 secciones</td></tr>' +
+'</table>' +
+
+'<h2>1. El Juicio de la Legibilidad (PEP 8)</h2>' +
+'<p>Se comparó un fragmento de código sin ordenar con su versión correcta bajo el estándar PEP 8, ' +
+'analizando indentación, espaciado, nombres descriptivos y documentación. ' +
+'Se trabajó la premisa de Guido van Rossum: <b>«El código se lee más veces de las que se escribe»</b>.</p>' +
+'<table>' +
+'<tr><th style="width:50%">Consigna</th><th>Respuesta del alumno</th><th style="width:16%">Resultado</th></tr>' +
+'<tr><td>¿Qué se priorizó al diseñar Python?</td><td>' + r1a + '</td><td>' + e1a + '</td></tr>' +
+'<tr><td>¿Qué es PEP 8?</td><td>' + r1b + '</td><td>' + e1b + '</td></tr>' +
+'</table>' +
+
+'<h2>2. Laboratorio de Tipado Dinámico</h2>' +
+'<p>El alumno interactuó con variables y observó la <b>asignación invisible</b>: Python deduce el tipo ' +
+'de dato automáticamente, a diferencia de la declaración explícita de PSeInt.</p>' +
+'<table>' +
+'<tr><th style="width:32%">Variable</th><th style="width:38%">Valor asignado</th><th>Tipo detectado</th></tr>' +
+varRows +
+'</table>' +
+'<h3>Prueba de flexibilidad (mutabilidad de tipo en ejecución)</h3>' +
+'<p>Secuencia de tipos que la variable <b>dato</b> adoptó durante la ejecución: <b>' + escapeDoc(flexTxt) + '</b></p>' +
+'<p class="small">Conclusión esperada: en un lenguaje de tipado estático (como PSeInt) reasignar un tipo distinto ' +
+'genera un error; en Python es una operación válida y sin errores en tiempo de ejecución.</p>' +
+
+'<h2>3. Mapa del Ecosistema de Datos e IA</h2>' +
+'<p>El alumno clasificó librerías y aplicaciones reales dentro de cada ecosistema de Python.</p>' +
+'<table>' +
+'<tr><th style="width:32%">Ecosistema</th><th>Elementos clasificados correctamente</th></tr>' +
+placeRows +
+'</table>' +
+'<p><b>Puntaje obtenido:</b> ' + state.s3.matched + ' de ' + state.s3.total + ' tarjetas clasificadas correctamente.</p>' +
+
+'<h2>4. Síntesis del alumno</h2>' +
+sintesisHTML +
+'<h3>Preguntas guía para fundamentar en la carpeta</h3>' +
+'<ul>' +
+'<li>¿Por qué la legibilidad del código es una herramienta de trabajo colaborativo y no una simple estética?</li>' +
+'<li>¿Qué ventajas y qué riesgos tiene el tipado dinámico frente al tipado estático de PSeInt?</li>' +
+'<li>¿Qué ecosistema de Python (Machine Learning, Data Science o Computer Vision) te gustaría explorar y por qué?</li>' +
+'<li>¿Cómo se relaciona el estándar PEP 8 con el trabajo profesional en equipos de desarrollo?</li>' +
+'</ul>' +
+'<p class="small">Espacio para desarrollar la síntesis en la carpeta:</p>' +
+'<div class="line"></div><div class="line"></div><div class="line"></div>' +
+'<div class="line"></div><div class="line"></div><div class="line"></div>' +
+'<div class="line"></div><div class="line"></div>' +
+
+'<h2>Observaciones del docente</h2>' +
+'<div class="box">&nbsp;</div>' +
+'<div class="line"></div><div class="line"></div>' +
+
+'<p class="small" style="margin-top:24pt;">Documento generado automáticamente por el simulador educativo ' +
+'«Python: El Lenguaje que Piensa Contigo» · Material N.º 22.</p>' +
+
+'</body></html>';
+
+  /* ---- Descarga ---- */
+  try{
+    const blob = new Blob(['\ufeff', docHTML], { type:'application/msword' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    const safeName = (apellido + '_' + nombre).replace(/[^\wÁÉÍÓÚáéíóúÑñ\-]/g, '') || 'Alumno';
+    a.href = url;
+    a.download = 'Informe_Python_' + safeName + '_' + curso.replace(/[^\w\-]/g, '') + '.doc';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+
+    msgEl.className = 'mt-3 text-[12px] text-[#7ee787] font-semibold';
+    msgEl.innerHTML = '✅ ¡Informe generado! Revisa tu carpeta de <b>Descargas</b> y ábrelo con Word o Google Docs.';
+    msgEl.classList.remove('hidden');
+  }catch(err){
+    msgEl.className = 'mt-3 text-[12px] text-[#ff9e9e] font-semibold';
+    msgEl.textContent = '❌ No se pudo generar el archivo. Intenta nuevamente desde Chrome.';
+    msgEl.classList.remove('hidden');
+  }
+});
+
+/* ==========================================================
+   INICIALIZACIÓN
+   ========================================================== */
+updateProgress();
+</script>
+</body>
+</html>
